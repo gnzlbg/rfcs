@@ -120,6 +120,23 @@ fn my_benchmark(bench: Bencher) -> BenchResult {
 }
 ```
 
+Using `mem::clobber()` you can force the optimizer to flush all pending writes
+to memory of data previously passed to `mem::black_box`:
+
+```rust
+fn bench_vec_push_back(bench: Bencher) -> BenchResult {
+    let n = 100_000_000;
+    let mut v = Vec::with_capacity(n);
+    bench.iter_n(n, || {
+        // Allow vector data to be clobbered:
+        mem::black_box(v.as_ptr());
+        v.push_back(42_u8);
+        // Forces 42 to be written back to memory:
+        mem::clobber();
+    })
+}
+```
+
 # Reference-level explanation
 [reference-level-explanation]: #reference-level-explanation
 
@@ -129,8 +146,28 @@ Samples are [winsorized], so extreme outliers get clamped.
 `cargo bench` essentially takes the same flags as `cargo test`, except it has a `--bench foo`
 flag to select a single benchmark target.
 
+[winsorized]: https://en.wikipedia.org/wiki/Winsorizing
 
- [winsorized]: https://en.wikipedia.org/wiki/Winsorizing
+## `mem::black_box`
+
+```rust
+pub fn black_box<T>(x: T) -> T;
+```
+
+Prevents a value or the result of an expression from being optimized away by the
+compiler adding as little overhead as possible. It does not prevent
+optimizations on the expression generating the value in any way: the expression
+might be removed entirely when the result is already known. It forces, however,
+the result of the expression to be stored in either memory or a register.
+
+## `mem::clobber`
+
+```rust
+pub fn clobber() -> ();
+```
+
+Is a read/write barriert: it flushes pending writes to variables "escaped" with
+`mem::black_box` to global memory.
 
 # Drawbacks
 [drawbacks]: #drawbacks
