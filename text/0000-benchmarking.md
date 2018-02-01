@@ -166,7 +166,7 @@ the result of the expression to be stored in either memory or a register.
 pub fn clobber() -> ();
 ```
 
-Is a read/write barriert: it flushes pending writes to variables "escaped" with
+Is a read/write barrier: it flushes pending writes to variables "escaped" with
 `mem::black_box` to global memory.
 
 # Drawbacks
